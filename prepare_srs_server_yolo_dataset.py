@@ -166,14 +166,15 @@ def labels_from_mask(mask: np.ndarray, min_area: int, class_mode: str, value_to_
     return rows
 
 
-def tile_ranges(length: int, tiles: int) -> list[tuple[int, int]]:
-    """Split one dimension into fixed non-overlapping tiles."""
-    ranges = []
-    for idx in range(tiles):
-        start = round(idx * length / tiles)
-        end = round((idx + 1) * length / tiles)
-        ranges.append((int(start), int(end)))
-    return ranges
+def tile_ranges(length: int, tiles: int, overlap: float) -> list[tuple[int, int]]:
+    """Split one dimension into fixed-count tile ranges with fractional overlap."""
+    if tiles == 1:
+        return [(0, length)]
+    window = min(length, max(round(length / (tiles - (tiles - 1) * overlap)), 1))
+    step = max(round(window * (1.0 - overlap)), 1)
+    starts = [min(step * idx, max(length - window, 0)) for idx in range(tiles)]
+    starts[-1] = max(length - window, 0)
+    return [(start, min(start + window, length)) for start in starts]
 
 
 def convert_image_mode(image: np.ndarray, mode: str) -> np.ndarray:
@@ -238,8 +239,8 @@ def process_labeled_split(
             continue
         mask = load_mask(mask_path, image.shape[:2])
         h, w = image.shape[:2]
-        x_ranges = tile_ranges(w, args.tiles_x)
-        y_ranges = tile_ranges(h, args.tiles_y)
+        x_ranges = tile_ranges(w, args.tiles_x, args.tile_overlap)
+        y_ranges = tile_ranges(h, args.tiles_y, args.tile_overlap)
         stem = output_stem(image_path, args.train_root)
 
         for tile_y, (y1, y2) in enumerate(y_ranges):
@@ -294,8 +295,8 @@ def process_test_split(args: argparse.Namespace, manifest_rows: list[dict]) -> t
             print(f"[WARN] failed to read test image: {image_path}")
             continue
         h, w = image.shape[:2]
-        x_ranges = tile_ranges(w, args.tiles_x)
-        y_ranges = tile_ranges(h, args.tiles_y)
+        x_ranges = tile_ranges(w, args.tiles_x, args.tile_overlap)
+        y_ranges = tile_ranges(h, args.tiles_y, args.tile_overlap)
         stem = output_stem(image_path, args.test_root)
 
         for tile_y, (y1, y2) in enumerate(y_ranges):
@@ -389,7 +390,10 @@ def build_dataset(args: argparse.Namespace) -> None:
     print(f"train root: {args.train_root}")
     print(f"test root: {args.test_root}")
     print(f"out: {args.out}")
-    print(f"class_mode={args.class_mode} image_mode={args.image_mode} tiles={args.tiles_x}x{args.tiles_y}")
+    print(
+        f"class_mode={args.class_mode} image_mode={args.image_mode} "
+        f"tiles={args.tiles_x}x{args.tiles_y} tile_overlap={args.tile_overlap}"
+    )
     for split in ("train", "val", "test"):
         print(f"{split}: {summaries[split]['images']} images, {summaries[split]['boxes']} boxes")
     if not args.write_empty_test_labels:
@@ -413,6 +417,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tiles-x", type=int, default=2)
     parser.add_argument("--tiles-y", type=int, default=2)
     parser.add_argument(
+        "--tile-overlap",
+        type=float,
+        default=0.0,
+        help="Fractional overlap between neighboring tiles, e.g. 0.2 keeps 20% overlap per axis.",
+    )
+    parser.add_argument(
         "--write-empty-test-labels",
         action="store_true",
         help="Write empty labels/test/*.txt files for image-only test samples.",
@@ -425,6 +435,8 @@ def parse_args() -> argparse.Namespace:
     args.out = args.out.expanduser().resolve()
     args.tiles_x = max(1, args.tiles_x)
     args.tiles_y = max(1, args.tiles_y)
+    if not 0.0 <= args.tile_overlap < 1.0:
+        raise ValueError("--tile-overlap must be in [0.0, 1.0).")
     return args
 
 
