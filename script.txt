@@ -1,0 +1,66 @@
+格式
+数据集模式，默认转 train/val/test
+python mask_to_yolo_dataset.py `
+  --src-root "D:\liulanqi\code\Data\0706-haixin825-cropped" `
+  --class-names "D:\liulanqi\code\Data\0618haixinP\class_names.txt" `
+  --class-mode multi `
+  --min-area 
+单个 mask 文件
+python mask_to_yolo_dataset.py `
+  --mask-source "D:\path\to\mask.png" `
+  --out-label "D:\path\to\mask.txt" `
+  --class-names "D:\liulanqi\code\Data\0618haixinP\class_names.txt" `
+  --class-mode multi `
+  --min-area 1
+任意 mask 目录
+python mask_to_yolo_dataset.py `
+  --mask-source "D:\path\to\mask_dir" `
+  --out-root "D:\path\to\yolo_labels" `
+  --class-names "D:\liulanqi\code\Data\0618haixinP\class_names.txt" `
+  --class-mode multi `
+  --min-area 1
+
+切片
+python offline_tile_dataset.py \
+  --src-root /home/vina01/yolo_v8/ultralytics-main/datasets/0706-haixin825-cropped \
+  --src-yaml /home/vina01/yolo_v8/ultralytics-main/datasets/0706-haixin825-cropped/data.yaml \
+  --dst-root /home/vina01/yolo_v8/ultralytics-main/datasets/0706-haixin825-cropped-tiled \
+  --dst-yaml /home/vina01/yolo_v8/ultralytics-main/datasets/0706-haixin825-cropped-tiled/data.yaml \
+  --tile-size 2,2 \
+  --tile-overlap 0.2 \
+  --tile-min-area 0.1
+
+训练
+yolo detect train \
+  model=yolov8n.pt \
+  data=/home/vina01/yolo_v8/ultralytics-main/datasets/0706-haixin825-cropped-tiled/data.yaml \
+  imgsz=1024 \
+  epochs=100 \
+  batch=8 \
+  workers=8 \
+  device=0
+
+推理
+python infer_offline_tile.py \
+  --weights runs/detect/train/weights/best.pt \
+  --source datasets/test_images/haixin/0711 \
+  --out-dir datasets/test_images/haixin/0711/predict \
+  --tile-size 2,2 \
+  --tile-overlap 0.2 \
+  --imgsz 1024 \
+  --conf 0.1 \
+  --tile-iou 0.7 \
+  --merge-iou 0.5 \
+  --batch 16 \
+  --device 0 \
+  --save-txt \
+  --save-conf \
+  --save-vis
+
+导出
+yolo export \
+  model=runs/detect/train/weights/best.pt \
+  format=onnx \
+  imgsz=1024 \
+  opset=15 \
+  simplify=True
