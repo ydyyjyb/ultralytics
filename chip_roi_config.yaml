@@ -1,0 +1,60 @@
+version: 1
+active_mode: srs
+
+srs:
+  saturation_threshold: 75
+  value_threshold: 35
+  max_side: 1024
+  pre_open_size: 3
+  close_w_fraction: 0.004
+  close_h_fraction: 0.004
+  close_iterations: 1
+  post_open_size: 0
+  component_min_area_fraction: 0.01
+  projection_source: largest_component
+  column_min_fraction: 0.05
+  row_min_fraction: 0.05
+
+hx:
+  background_samples: []
+  h_margin: 10
+  s_margin: 45
+  v_margin: 45
+  min_value: 8
+  max_side: 1024
+  pre_open_size: 3
+  close_w_fraction: 0.004
+  close_h_fraction: 0.004
+  close_iterations: 1
+  post_open_size: 0
+  component_min_area_fraction: 0.01
+  projection_source: largest_component
+  column_min_fraction: 0.05
+  row_min_fraction: 0.05
+
+crop:
+  # left, top, right, bottom
+  margin_px: [20, 10, 20, 10]
+  margin_ratio: [0.01, 0.005, 0.01, 0.005]
+  failure_policy: skip
+  preserve_extension: true
+  mask_extension: .png
+
+validation:
+  min_area_fraction: 0.08
+  max_area_fraction: 0.995
+  min_width_fraction: 0.20
+  min_height_fraction: 0.20
+  max_aspect_ratio: 12.0
+
+# Optional chip-relative ROIs.
+# Example:
+# rois:
+#   - name: left_half
+#     ratio_xyxy: [0.0, 0.0, 0.5, 1.0]
+rois: []
+
+calibration:
+  reference_image: ''
+  reference_width: 0
+  reference_height: 0
