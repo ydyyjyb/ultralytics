@@ -35,13 +35,16 @@ yolo detect train \
   model=yolov8n.pt \
   data=/home/vina04/DATA/cropped_data/SRS+100+cropped-tiled/data.yaml \
   imgsz=1024 \
-  rect=True \
   epochs=200 \
   batch=8 \
   workers=8 \
   device=0 \
+  cls=1.0 \
+  cls_pw=0.5 \
+  mosaic=0.5 \
+  close_mosaic=80 \
   project=/home/vina04/ultralytics/runs/srs_original_2x2_overlap \
-  name=0715_1019_rect
+  name=0715_1054_cls_mosaic
 
 推理
 python infer_offline_tile.py \
