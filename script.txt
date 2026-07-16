@@ -1,24 +1,45 @@
 格式
-数据集模式，默认转 train/val/test
+1.数据集模式，默认转 train/val/test
 python mask_to_yolo_dataset.py \
   --src-root "/home/vina04/SRS+100+cropped" \
   --class-names "/home/vina04/SRS+100+cropped/class_names.txt" \
   --class-mode multi \
   --min-area 1
-单个 mask 文件
+2.单个 mask 文件
 python mask_to_yolo_dataset.py \
   --mask-source "D:\path\to\mask.png" \
   --out-label "D:\path\to\mask.txt" \
   --class-names "D:\liulanqi\code\Data\0618haixinP\class_names.txt" \
   --class-mode multi \
   --min-area 1
-任意 mask 目录
+3.任意 mask 目录
 python mask_to_yolo_dataset.py \
   --mask-source "D:\path\to\mask_dir" \
   --out-root "D:\path\to\yolo_labels" \
   --class-names "D:\liulanqi\code\Data\0618haixinP\class_names.txt" \
   --class-mode multi \
   --min-area 1
+
+轻量化裁切
+1. 本地裁剪芯片主体
+python OMG.py chip `
+  --save-preview
+2. 本地手动画 ROI
+python OMG.py roi
+3. 服务器生成 YOLO 标签并训练
+cd /home/vina04/ultralytics
+
+DATA_SRC=/home/vina04/DATA/SRS_train/SRS+100+cropped
+DATA_OUT=/home/vina04/DATA/SRS_train/SRS+100+cropped+merge
+
+python OMG.py merge \
+  --chip-root $DATA_OUT/_chip_body \
+  --out-root $DATA_OUT \
+  --roi-config $DATA_OUT/roi_config.json \
+  --class-names $DATA_SRC/class_names.txt \
+  --class-mode multi \
+  --min-area 1 \
+  --rebuild
 
 切片
 python offline_tile_dataset.py \
